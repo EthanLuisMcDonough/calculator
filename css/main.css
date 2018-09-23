@@ -1,0 +1,25 @@
+window {
+    background: #ffffff;
+}
+
+.calc-textarea {
+    border: 0;
+    font-size: 250%;
+}
+
+.calc-button {
+    border: none;
+    border-radius: 3px;
+    background: #ff4500;
+    color: #f5f5f5;
+    text-shadow: none;
+    box-shadow: none;
+}
+
+.calc-button:hover {
+    background: #ff6a33;
+}
+
+.err-label {
+    color: #8b0000;
+}
