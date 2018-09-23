@@ -19,6 +19,14 @@ fn apply_css<T: WidgetExt>(win: &T, bytes: &[u8]) -> Option<Result<(), gtk::Erro
     })
 }
 
+fn truncate_str_ellipses(s: &str, size: usize) -> String {
+    if s.len() <= size || size < 4 {
+        s.to_string()
+    } else {
+        format!("{}...", &s[..(size - 3)])
+    }
+}
+
 fn format_ans(ans: f64) -> String {
     if ans.abs() > 1E9 {
         format!("{:E}", ans)
@@ -112,6 +120,7 @@ pub struct CalculatorState {
     textarea: Entry,
     mode_index: Option<usize>,
     err_label: gtk::Label,
+    mode_label: gtk::Label,
     clear_next: bool,
 }
 
@@ -131,6 +140,9 @@ impl CalculatorState {
             ctx.add_class("err-label");
         }
 
+        let mode_label = gtk::Label::new(Some("Current: Rad"));
+        mode_label.set_line_wrap(true);
+
         Self {
             angle_mode: parser::AngleMode::Rad,
             prev_ans: None,
@@ -139,6 +151,7 @@ impl CalculatorState {
             mode_index: None,
             err_label,
             clear_next: true,
+            mode_label,
         }
     }
 
@@ -189,8 +202,8 @@ impl CalculatorState {
                 self.textarea.set_text(&format_ans(fixed));
                 self.clear_next = true;
             }
-            Err(msg) => {
-                self.err_label.set_text(msg.as_ref());
+            Err(ref msg) => {
+                self.err_label.set_text(&truncate_str_ellipses(msg, 50));
             }
         }
     }
@@ -230,6 +243,8 @@ impl CalculatorState {
                 if let Some(button) = self.buttons.get(index) {
                     button.button.set_label(&self.angle_mode.to_string());
                     self.angle_mode = !self.angle_mode;
+                    self.mode_label
+                        .set_label(&format!("Current: {}", self.angle_mode.to_string()))
                 }
             },
             Special(ButtonEvent::Evaluate) => self.evaluate(),
@@ -252,6 +267,8 @@ impl Calculator {
         header.set_show_close_button(true);
         header.set_decoration_layout("menu:close");
         window.set_titlebar(&header);
+
+        window.set_title("Scientific Calculator");
 
         let mut state = CalculatorState::new(vec![
             // First row
@@ -385,11 +402,13 @@ impl Calculator {
 
         grid.attach(
             &state.err_label,
-            0,
+            1,
             textarea_height as i32 + 1,
-            ROW_LEN as i32 - 2,
+            ROW_LEN as i32 - 3,
             1,
         );
+
+        grid.attach(&state.mode_label, 0, textarea_height as i32 + 1, 1, 1);
 
         grid.set_row_homogeneous(true);
         grid.set_column_homogeneous(true);
