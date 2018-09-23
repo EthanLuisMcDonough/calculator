@@ -19,18 +19,6 @@ fn apply_css<T: WidgetExt>(win: &T, bytes: &[u8]) -> Option<Result<(), gtk::Erro
     })
 }
 
-fn adjust_size<T: WidgetExt + GtkWindowExt>(win: &T, rows: i32) -> Option<Result<(), gtk::Error>> {
-    let (_, height) = win.get_size();
-    let height = height as f64;
-    apply_css(
-        win,
-        format!(
-            "window {{ font-size: {}px; }}",
-            (height / rows as f64) * 0.70
-        ).as_bytes(),
-    )
-}
-
 fn format_ans(ans: f64) -> String {
     if ans.abs() > 1E9 {
         format!("{:E}", ans)
@@ -258,6 +246,13 @@ pub struct Calculator {
 impl Calculator {
     pub fn new(application: &gtk::Application) -> Self {
         let window = gtk::ApplicationWindow::new(application);
+
+        let header = gtk::HeaderBar::new();
+        header.set_title("Scientific Calculator");
+        header.set_show_close_button(true);
+        header.set_decoration_layout("menu:close");
+        window.set_titlebar(&header);
+
         let mut state = CalculatorState::new(vec![
             // First row
             CalcButton::new("Deg", ButtonData::Special(ButtonEvent::DegMode)),
@@ -356,11 +351,7 @@ impl Calculator {
             Inhibit(false)
         });
 
-        window.connect_check_resize(move |window| {
-            if adjust_size(window, 8).and_then(|res| res.ok()).is_none() {
-                println!("ERROR: resize CSS failed to load");
-            }
-        });
+        window.set_resizable(false);
 
         let grid = gtk::Grid::new();
 
